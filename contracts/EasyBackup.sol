@@ -48,6 +48,34 @@ contract EasyBackup is Ownable {
     mapping(address => uint256[]) public createdBackups;
     mapping(address => uint256[]) public claimableBackups;
 
+    // EVENTS
+    event BackupCreated(
+        address indexed from,
+        address indexed to,
+        address indexed token,
+        uint256 amount,
+        uint256 expiry,
+        uint256 id
+    );
+    event BackupEdited(
+        address indexed from,
+        address indexed to,
+        address indexed token,
+        uint256 amount,
+        uint256 expiry,
+        uint256 id
+    );
+    event BackupDeleted(
+        uint256 indexed id
+    );
+    event BackupClaimed(
+        address indexed from,
+        address indexed to,
+        address indexed token,
+        uint256 amount,
+        uint256 id
+    );
+
     // USER FUNCTIONS
     function heartBeat() public {
         lastInteraction[msg.sender] = block.timestamp;
@@ -73,6 +101,16 @@ contract EasyBackup is Ownable {
         );
         createdBackups[msg.sender].push(backupCount);
         claimableBackups[_to].push(backupCount);
+
+        emit BackupCreated(
+            msg.sender,
+            _to,
+            _token,
+            _amount,
+            _expiry,
+            backupCount
+        );
+
         backupCount++;
     }
 
@@ -86,6 +124,15 @@ contract EasyBackup is Ownable {
 
         backups[_id].amount = _amount;
         backups[_id].expiry = _expiry;
+
+        emit BackupEdited(
+            backups[_id].from,
+            msg.sender,
+            backups[_id].token,
+            _amount,
+            _expiry,
+            _id
+        );
     }
 
     function deletBackup(uint256 _id) external {
@@ -93,6 +140,7 @@ contract EasyBackup is Ownable {
         lastInteraction[msg.sender] = block.timestamp;
 
         backups[_id].isActive = false;
+        emit BackupDeleted(_id);
     }
 
     // Backup claiming
@@ -116,12 +164,34 @@ contract EasyBackup is Ownable {
             ),
             backups[_id].amount
         );
-        uint256 fee = amount * claimFee / 10000;
+        uint256 fee = (amount * claimFee) / 10000;
 
         backups[_id].isActive = false;
 
-        require(IERC20(backups[_id].token).transferFrom(backups[_id].from, feeCollector , fee), "Transaction failed");
-        require(IERC20(backups[_id].token).transferFrom(backups[_id].from, backups[_id].to , amount - fee), "Transaction failed");
+        require(
+            IERC20(backups[_id].token).transferFrom(
+                backups[_id].from,
+                feeCollector,
+                fee
+            ),
+            "Transaction failed"
+        );
+        require(
+            IERC20(backups[_id].token).transferFrom(
+                backups[_id].from,
+                backups[_id].to,
+                amount - fee
+            ),
+            "Transaction failed"
+        );
+
+        emit BackupClaimed(
+            backups[_id].from,
+            backups[_id].to,
+            backups[_id].token,
+            amount,
+            _id
+        );
     }
 
     // HELPER FUNCTIONS
@@ -129,7 +199,11 @@ contract EasyBackup is Ownable {
         return (initFeeUsd * 1e16) / ethPriceOracle.getEthPrice();
     }
 
-    function min(uint256 a, uint256 b, uint256 c) internal pure returns (uint256) {
+    function min(
+        uint256 a,
+        uint256 b,
+        uint256 c
+    ) internal pure returns (uint256) {
         uint256 minNumber;
 
         if (a < b) {
