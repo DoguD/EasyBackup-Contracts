@@ -16,7 +16,7 @@ contract EasyBackupToken is ERC20, Ownable {
         (MAX_POSSIBLE_SUPPLY * 35) / 100; // 3.5 million
     uint256 public constant LIQUIDITY_ALLOCATION =
         (MAX_POSSIBLE_SUPPLY * 5) / 100; // 0.5 million
-        
+
     // Locked Developer Funds
     uint256 lastMintTimestamp;
     uint256 unlockTimestmap;
@@ -55,14 +55,14 @@ contract EasyBackupToken is ERC20, Ownable {
         farmAddressSet = true;
     }
 
-    function farmMint(uint256 _amount) external {
+    function farmMint(address _to, uint256 _amount) external {
         require(msg.sender == farmAddress, "Only farm can mint");
         require(
             mintedFarmTokens + _amount <= FARM_ALLOCATION,
             "Farm allocation exceeded"
         );
-        mintedFarmTokens -= _amount;
-        _mint(msg.sender, _amount);
+        mintedFarmTokens += _amount;
+        _mint(_to, _amount);
     }
 
     // Presale Allocation
