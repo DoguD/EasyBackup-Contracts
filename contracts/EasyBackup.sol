@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "./libs/Ownable.sol";
 
 interface EthPriceOracle {
-    function getEthPrice() external view returns (uint256);
+    function getEthPrice() external view returns (uint256, uint256);
 }
 
 interface IERC20 {
@@ -196,7 +196,9 @@ contract EasyBackup is Ownable {
 
     // HELPER FUNCTIONS
     function getInitFee() public view returns (uint256) {
-        return (initFeeUsd * 1e16) / ethPriceOracle.getEthPrice();
+        (uint256 _price, uint256 _decimals) = ethPriceOracle.getEthPrice();
+        uint256 _fee = (initFeeUsd * 1e16 * (10 ** _decimals)) / _price; 
+        return _fee;
     }
 
     function min(
