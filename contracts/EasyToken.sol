@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "./libs/ERC20/ERC20.sol";
 import "./libs/Ownable.sol";
 
-contract EasyBackupToken is ERC20, Ownable {
+contract EasyToken is ERC20, Ownable {
     // Token Allocations
     uint256 public constant MAX_POSSIBLE_SUPPLY = 10000000 * 1e18; // 10 million
     uint256 public constant INITIAL_DEVELOPER_ALLOCATION =
