@@ -18,16 +18,16 @@ contract EasyToken is ERC20, Ownable {
         (MAX_POSSIBLE_SUPPLY * 5) / 100; // 0.5 million
 
     // Locked Developer Funds
-    uint256 lastMintTimestamp;
-    uint256 unlockTimestmap;
+    uint256 public lastMintTimestamp;
+    uint256 public unlockTimestmap;
     // Farm Allocation
-    address farmAddress;
+    address public farmAddress;
     bool farmAddressSet = false;
-    uint256 mintedFarmTokens = 0;
+    uint256 public mintedFarmTokens = 0;
     // Presale Allocation
-    address presaleAddress;
+    address public presaleAddress;
     bool presaleSet = false;
-    uint256 mintedPresaleTokens = 0;
+    uint256 public mintedPresaleTokens = 0;
 
     constructor() ERC20("EasyBlock", "EASY") {
         _mint(msg.sender, INITIAL_DEVELOPER_ALLOCATION);

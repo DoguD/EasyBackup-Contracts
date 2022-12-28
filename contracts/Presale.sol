@@ -27,7 +27,7 @@ contract Presale is Ownable {
     address public constant currencyAddress =
         0x04068DA6C83AFCFA0e13ba15A6696662335D5B75; // USDC on Fantom
     address public tokenAddress;
-    uint256 public constant tokenPrice = 10000; // 0.01 USDC (USDC has 6 decimals)
+    uint256 public constant tokenPrice = 5000; // 0.005 USDC (USDC has 6 decimals)
 
     EasyClub easyClubContract =
         EasyClub(0x5d6f546f2357E84720371A0510f64DBC3FbACe33);
@@ -49,7 +49,7 @@ contract Presale is Ownable {
 
         if (status == 1) {
             require(
-                easyClubContract.balanceOf(msg.sender) >= 1,
+                easyClubContract.balanceOf(msg.sender) >= 5,
                 "Presale is only for EasyClub members"
             );
         }
