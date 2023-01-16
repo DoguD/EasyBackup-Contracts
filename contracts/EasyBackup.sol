@@ -166,14 +166,7 @@ contract EasyBackup is Ownable {
         lastInteraction[msg.sender] = block.timestamp;
 
         // Calculate amount, minimum of balance, allowance, backup amount
-        uint256 amount = min(
-            IERC20(backups[_id].token).balanceOf(backups[_id].from),
-            IERC20(backups[_id].token).allowance(
-                backups[_id].from,
-                address(this)
-            ),
-            backups[_id].amount
-        );
+        uint256 amount = getClaimableAmount(_id);
         uint256 fee = (amount * claimFee) / 10000;
 
         backups[_id].isActive = false;
@@ -209,6 +202,17 @@ contract EasyBackup is Ownable {
         (uint256 _price, uint256 _decimals) = ethPriceOracle.getEthPrice();
         uint256 _fee = (initFeeUsd * 1e16 * (10 ** _decimals)) / _price; 
         return _fee / 1e16 * 1e16; // Rounding to two decimals
+    }
+
+    function getClaimableAmount(uint256 _id) public view returns (uint256) {
+        return min(
+            IERC20(backups[_id].token).balanceOf(backups[_id].from),
+            IERC20(backups[_id].token).allowance(
+                backups[_id].from,
+                address(this)
+            ),
+            backups[_id].amount
+        );
     }
 
     function min(
