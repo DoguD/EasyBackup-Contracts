@@ -46,7 +46,9 @@ contract EasyBackup is Ownable {
     mapping(uint256 => Backup) public backups;
     uint256 public backupCount;
     mapping(address => uint256[]) public createdBackups;
+    mapping(address => uint256) public createdBackupsCount;
     mapping(address => uint256[]) public claimableBackups;
+    mapping(address => uint256) public claimableBackupsCount;
 
     // EVENTS
     event BackupCreated(
@@ -100,7 +102,9 @@ contract EasyBackup is Ownable {
             true
         );
         createdBackups[msg.sender].push(backupCount);
+        createdBackupsCount[msg.sender]++;
         claimableBackups[_to].push(backupCount);
+        claimableBackupsCount[_to]++;
 
         emit BackupCreated(
             msg.sender,
@@ -135,7 +139,7 @@ contract EasyBackup is Ownable {
         );
     }
 
-    function deletBackup(uint256 _id) external {
+    function deleteBackup(uint256 _id) external {
         require(backups[_id].from == msg.sender, "Not your backup");
         lastInteraction[msg.sender] = block.timestamp;
 
@@ -147,7 +151,7 @@ contract EasyBackup is Ownable {
     function claimBackup(uint256 _id) external {
         require(backups[_id].to == msg.sender, "Not your backup");
         require(
-            backups[_id].expiry + lastInteraction[backups[_id].from] >
+            backups[_id].expiry + lastInteraction[backups[_id].from] <
                 block.timestamp,
             "Too early"
         );
@@ -198,7 +202,7 @@ contract EasyBackup is Ownable {
     function getInitFee() public view returns (uint256) {
         (uint256 _price, uint256 _decimals) = ethPriceOracle.getEthPrice();
         uint256 _fee = (initFeeUsd * 1e16 * (10 ** _decimals)) / _price; 
-        return _fee;
+        return _fee / 1e16 * 1e16; // Rounding to two decimals
     }
 
     function min(
@@ -235,6 +239,10 @@ contract EasyBackup is Ownable {
     function setFeeCollector(address _feeCollector) external onlyOwner {
         feeCollector = _feeCollector;
     }
+
+    function setInitFee(uint256 _fee) external onlyOwner {
+        initFeeUsd = _fee;
+    } 
 
     function withdrawAll() public payable onlyOwner {
         require(payable(feeCollector).send(address(this).balance));

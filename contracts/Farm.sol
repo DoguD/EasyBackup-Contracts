@@ -404,7 +404,7 @@ contract MasterChef is Ownable {
     struct PoolInfo {
         IERC20 lpToken;           // Address of LP token contract.
         uint256 allocPoint;       // How many allocation points assigned to this pool. EASYs to distribute per block.
-        uint256 lastRewardTime;  // Last block time that BOOs distribution occurs.
+        uint256 lastRewardTime;  // Last block time that EASYs distribution occurs.
         uint256 accEASYPerShare; // Accumulated EASYs per share, times 1e12. See below.
     }
 
@@ -426,22 +426,23 @@ contract MasterChef is Ownable {
     mapping (uint256 => mapping (address => UserInfo)) public userInfo;
     // Total allocation points. Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint = 0;
-    // The block time when boo mining starts.
+    // The block time when easy mining starts.
     uint256 public immutable startTime;
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
+    event Harvest(address indexed user, uint256 indexed pid);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
 
     constructor(
         address _easyAddress,
         address _devaddr,
-        uint256 _booPerSecond,
+        uint256 _easyPerSecond,
         uint256 _startTime
     ) {
         easy = EasyToken(_easyAddress);
         devaddr = _devaddr;
-        easyPerSecond = _booPerSecond;
+        easyPerSecond = _easyPerSecond;
         startTime = _startTime;
     }
 
@@ -449,12 +450,12 @@ contract MasterChef is Ownable {
         return poolInfo.length;
     }
 
-    // Changes boo token reward per second, with a cap of maxboo per second
+    // Changes easy token reward per second, with a cap of maxeasy per second
     // Good practice to update pools without messing up the contract
-    function setBooPerSecond(uint256 _easyPerSecond) external onlyOwner {
+    function setEasyPerSecond(uint256 _easyPerSecond) external onlyOwner {
         require(_easyPerSecond <= maxEasyPerSecond, "setEasyPerSecond: too many easys!");
 
-        // This MUST be done or pool rewards will be calculated with new boo per second
+        // This MUST be done or pool rewards will be calculated with new easy per second
         // This could unfairly punish small pools that dont have frequent deposits/withdraws/harvests
         massUpdatePools(); 
 
@@ -549,7 +550,7 @@ contract MasterChef is Ownable {
         pool.lastRewardTime = block.timestamp;
     }
 
-    // Deposit LP tokens to MasterChef for boo allocation.
+    // Deposit LP tokens to MasterChef for easy allocation.
     function deposit(uint256 _pid, uint256 _amount) public {
 
         PoolInfo storage pool = poolInfo[_pid];
@@ -592,6 +593,23 @@ contract MasterChef is Ownable {
         emit Withdraw(msg.sender, _pid, _amount);
     }
 
+    // Harvest Rewards
+    function harvest(uint256 _pid) public {
+        PoolInfo storage pool = poolInfo[_pid];
+        UserInfo storage user = userInfo[_pid][msg.sender];
+
+        updatePool(_pid);
+
+        uint256 pending = user.amount.mul(pool.accEASYPerShare).div(1e12).sub(user.rewardDebt);
+        user.rewardDebt = user.amount.mul(pool.accEASYPerShare).div(1e12);
+
+        if(pending > 0) {
+            safeEASYTransfer(msg.sender, pending);
+        }
+
+        emit Harvest(msg.sender, _pid);
+    }
+
     // Withdraw without caring about rewards. EMERGENCY ONLY.
     function emergencyWithdraw(uint256 _pid) public {
         PoolInfo storage pool = poolInfo[_pid];
@@ -606,11 +624,11 @@ contract MasterChef is Ownable {
 
     }
 
-    // Safe Easy transfer function, just in case if rounding error causes pool to not have enough BOOs.
+    // Safe Easy transfer function, just in case if rounding error causes pool to not have enough EASYs.
     function safeEASYTransfer(address _to, uint256 _amount) internal {
-        uint256 booBal = easy.balanceOf(address(this));
-        if (_amount > booBal) {
-            easy.transfer(_to, booBal);
+        uint256 easyBal = easy.balanceOf(address(this));
+        if (_amount > easyBal) {
+            easy.transfer(_to, easyBal);
         } else {
             easy.transfer(_to, _amount);
         }

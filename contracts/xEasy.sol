@@ -8,17 +8,17 @@ import "./libs/ERC20/ERC20.sol";
 
 // xEasy is the staked version of Easy Token which earns 90% of platform revenue
 contract xEasyBlock is ERC20("xEasyBlock", "xEASY") {
-    IERC20 public easy;
+    address public easyAddresss;
 
     // Define the Easy token contract
     constructor(address _easyAddresss) public {
-        easy = IERC20(_easyAddresss);
+        easyAddresss = _easyAddresss;
     }
 
     // Locks Easy and mint xEasy
     function enter(uint256 _amount) public {
         // Gets the amount of Easy locked in the contract
-        uint256 totalEasy = easy.balanceOf(address(this));
+        uint256 totalEasy = IERC20(easyAddresss).balanceOf(address(this));
         // Gets the amount of xEasy in existence
         uint256 totalShares = totalSupply();
         // If no xEasy exists, mint it 1:1 to the amount put in
@@ -31,7 +31,7 @@ contract xEasyBlock is ERC20("xEasyBlock", "xEASY") {
             mint(msg.sender, mintAmount);
         }
         // Lock the Boo in the contract
-        require(easy.transferFrom(msg.sender, address(this), _amount), "Easy transfer failed");
+        require(IERC20(easyAddresss).transferFrom(msg.sender, address(this), _amount), "Easy transfer failed");
     }
 
     // Unlocks the staked + gained Easy and burns xEasy
@@ -39,27 +39,27 @@ contract xEasyBlock is ERC20("xEasyBlock", "xEASY") {
         // Gets the amount of xEasy in existence
         uint256 totalShares = totalSupply();
         // Calculates the amount of Easy the xEasy is worth
-        uint256 easyAmount = _share * easy.balanceOf(address(this)) / totalShares;
+        uint256 easyAmount = _share * IERC20(easyAddresss).balanceOf(address(this)) / totalShares;
         burn(msg.sender, _share);
-        easy.transfer(msg.sender, easyAmount);
+        IERC20(easyAddresss).transfer(msg.sender, easyAmount);
     }
 
     // returns the total amount of Easy an address has in the contract including fees earned
     function EASYBalance(address _account) external view returns (uint256 easyAmount_) {
         uint256 xEasyAmount = balanceOf(_account);
         uint256 totalxEasy = totalSupply();
-        easyAmount_ = xEasyAmount * easy.balanceOf(address(this)) / totalxEasy;
+        easyAmount_ = xEasyAmount * IERC20(easyAddresss).balanceOf(address(this)) / totalxEasy;
     }
 
     // returns how much Easy someone gets for redeeming xEasy
     function xEasyForEasy(uint256 _xEasyAmount) external view returns (uint256 easyAmount_) {
         uint256 totalxEasy = totalSupply();
-        easyAmount_ = _xEasyAmount * easy.balanceOf(address(this)) / totalxEasy;
+        easyAmount_ = _xEasyAmount * IERC20(easyAddresss).balanceOf(address(this)) / totalxEasy;
     }
 
     // returns how much xEasy someone gets for depositing Easy
     function EasyForxEasy(uint256 _easyAmount) external view returns (uint256 xEasyAmount_) {
-        uint256 totalEasy = easy.balanceOf(address(this));
+        uint256 totalEasy = IERC20(easyAddresss).balanceOf(address(this));
         uint256 totalxEasy = totalSupply();
         if (totalxEasy == 0 || totalEasy == 0) {
             xEasyAmount_ = _easyAmount;
@@ -71,7 +71,7 @@ contract xEasyBlock is ERC20("xEasyBlock", "xEASY") {
 
     function addReward(uint256 _easyAmount) external {
         require(_easyAmount > 0, "Cannot add 0");
-        easy.transferFrom(msg.sender, address(this), _easyAmount);
+        IERC20(easyAddresss).transferFrom(msg.sender, address(this), _easyAmount);
     }
 
     // Copied and modified from YAM code:
