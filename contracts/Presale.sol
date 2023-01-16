@@ -29,6 +29,8 @@ contract Presale is Ownable {
     address public tokenAddress;
     uint256 public constant tokenPrice = 5000; // 0.005 USDC (USDC has 6 decimals)
 
+    uint256 public minMintAmount = 2000 * 10e18; // 2000 tokens
+
     EasyClub easyClubContract =
         EasyClub(0x5d6f546f2357E84720371A0510f64DBC3FbACe33);
 
@@ -43,8 +45,8 @@ contract Presale is Ownable {
     }
 
     function buyTokens(uint256 _amount) external {
+        require(_amount > minMintAmount, "Amount is lower than minMintAmount");
         uint8 status = getSaleStatus();
-        require(_amount > 1e18, "Amount should be greater than 1");
         require(status == 1 || status == 2, "Sale not active");
 
         if (status == 1) {
@@ -72,5 +74,9 @@ contract Presale is Ownable {
         } else {
             return 3; // Ended
         }
+    }
+
+    function setMinMintAmount(uint256 _amount) external onlyOwner {
+        minMintAmount = _amount;
     }
 }
