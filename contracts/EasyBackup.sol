@@ -49,6 +49,8 @@ contract EasyBackup is Ownable {
     mapping(address => uint256) public createdBackupsCount;
     mapping(address => uint256[]) public claimableBackups;
     mapping(address => uint256) public claimableBackupsCount;
+    // Stats
+    uint256 public totalUsers;
 
     // EVENTS
     event BackupCreated(
@@ -105,6 +107,10 @@ contract EasyBackup is Ownable {
         createdBackupsCount[msg.sender]++;
         claimableBackups[_to].push(backupCount);
         claimableBackupsCount[_to]++;
+
+        if(createdBackupsCount[msg.sender] == 1) {
+            totalUsers++;
+        }
 
         emit BackupCreated(
             msg.sender,
