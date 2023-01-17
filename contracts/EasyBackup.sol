@@ -31,6 +31,7 @@ contract EasyBackup is Ownable {
         uint256 amount;
         uint256 expiry;
         bool isActive;
+        bool isClaimed;
     }
 
     // Constants
@@ -51,6 +52,8 @@ contract EasyBackup is Ownable {
     mapping(address => uint256) public claimableBackupsCount;
     // Stats
     uint256 public totalUsers;
+    uint256 public totalClaims;
+    mapping(address => uint256) public claims;
 
     // EVENTS
     event BackupCreated(
@@ -101,7 +104,8 @@ contract EasyBackup is Ownable {
             _token,
             _amount,
             _expiry,
-            true
+            true,
+            false
         );
         createdBackups[msg.sender].push(backupCount);
         createdBackupsCount[msg.sender]++;
@@ -170,6 +174,7 @@ contract EasyBackup is Ownable {
         uint256 fee = (amount * claimFee) / 10000;
 
         backups[_id].isActive = false;
+        backups[_id].isClaimed = true;
 
         require(
             IERC20(backups[_id].token).transferFrom(
@@ -187,6 +192,9 @@ contract EasyBackup is Ownable {
             ),
             "Transaction failed"
         );
+
+        claims[backups[_id].token] += amount;
+        totalClaims += amount;
 
         emit BackupClaimed(
             backups[_id].from,
