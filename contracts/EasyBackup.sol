@@ -50,6 +50,9 @@ contract EasyBackup is Ownable {
     mapping(address => uint256) public createdBackupsCount;
     mapping(address => uint256[]) public claimableBackups;
     mapping(address => uint256) public claimableBackupsCount;
+    // Discount for $EASY balance
+    address public easyTokenAddress;
+    uint256 public easyTokenDiscountAmount = 2000 * 10.18; // Default: 2000 $EASY
     // Stats
     uint256 public totalUsers;
     uint256 public totalClaims;
@@ -95,7 +98,7 @@ contract EasyBackup is Ownable {
         uint256 _amount,
         uint256 _expiry
     ) external payable {
-        require(msg.value >= getInitFee(), "Insufficient fee");
+        require(isDiscounted(msg.sender) || msg.value >= getInitFee(), "Insufficient fee");
         lastInteraction[msg.sender] = block.timestamp;
 
         backups[backupCount] = Backup(
@@ -223,6 +226,10 @@ contract EasyBackup is Ownable {
         );
     }
 
+    function isDiscounted(address _user) public view returns (bool) {
+        return IERC20(easyTokenAddress).balanceOf(_user) >= easyTokenDiscountAmount;
+    }
+
     function min(
         uint256 a,
         uint256 b,
@@ -260,7 +267,15 @@ contract EasyBackup is Ownable {
 
     function setInitFee(uint256 _fee) external onlyOwner {
         initFeeUsd = _fee;
-    } 
+    }
+
+    function setEasyContract(address _address) external onlyOwner {
+        easyTokenAddress = _address;
+    }
+
+    function setDiscountAmount(uint256 _amount) external onlyOwner {
+        easyTokenDiscountAmount = _amount;
+    }
 
     function withdrawAll() public payable onlyOwner {
         require(payable(feeCollector).send(address(this).balance));
