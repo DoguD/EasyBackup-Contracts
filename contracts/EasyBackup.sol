@@ -44,6 +44,8 @@ contract EasyBackup is Ownable {
     EthPriceOracle ethPriceOracle;
     address public initFeeCollector;
     address public claimFeeCollector;
+    bool public isReferralActive;
+    uint public referralFee = 5000; // Basis points, default 50%
     // User Variables
     mapping(address => uint256) public lastInteraction;
     mapping(uint256 => Backup) public backups;
@@ -99,9 +101,11 @@ contract EasyBackup is Ownable {
         address _token,
         uint256 _amount,
         uint256 _expiry,
-        bool _isAutomatic
+        bool _isAutomatic,
+        address _referral
     ) external payable {
-        require(isDiscounted(msg.sender) || msg.value >= getInitFee(), "Insufficient fee");
+        uint256 fee = getInitFee();
+        require(isDiscounted(msg.sender) || msg.value >= fee, "Insufficient fee");
         lastInteraction[msg.sender] = block.timestamp;
 
         backups[backupCount] = Backup(
@@ -133,6 +137,11 @@ contract EasyBackup is Ownable {
         );
 
         backupCount++;
+
+        // Referral
+        if(isReferralActive) {
+            require(payable(_referral).send(fee * referralFee / 10000), "Transaction failed");
+        }
     }
 
     function editBackup(
@@ -333,6 +342,14 @@ contract EasyBackup is Ownable {
 
     function setDiscountAmount(uint256 _amount) external onlyOwner {
         easyTokenDiscountAmount = _amount;
+    }
+
+    function setIsReferralActive(bool _isActive) external onlyOwner {
+        isReferralActive = _isActive;
+    }
+
+    function setReferralFee(uint256 _fee) external onlyOwner {
+        referralFee = _fee;
     }
 
     function withdrawAll() public payable onlyOwner {
