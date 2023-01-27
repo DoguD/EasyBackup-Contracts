@@ -31,6 +31,7 @@ contract EasyBackup is Ownable {
         uint256 amount;
         uint256 expiry;
         bool isActive;
+        bool isAutomatic;
         bool isClaimed;
     }
 
@@ -38,10 +39,11 @@ contract EasyBackup is Ownable {
     uint256 public constant MAX_CLAIM_FEE = 100; // Basis points, max 1%
     // Manager Variables
     uint256 public claimFee = 100; // Basis points, default 1%
-    uint256 public initFeeUsd = 100; // In 0.01 USD, default $1
+    uint256 public initFeeUsd = 1000; // In 0.01 USD, default $10
     address public ethPriceOracleAddress;
     EthPriceOracle ethPriceOracle;
-    address public feeCollector;
+    address public initFeeCollector;
+    address public claimFeeCollector;
     // User Variables
     mapping(address => uint256) public lastInteraction;
     mapping(uint256 => Backup) public backups;
@@ -52,7 +54,7 @@ contract EasyBackup is Ownable {
     mapping(address => uint256) public claimableBackupsCount;
     // Discount for $EASY balance
     address public easyTokenAddress;
-    uint256 public easyTokenDiscountAmount = 2000 * 10.18; // Default: 2000 $EASY
+    uint256 public easyTokenDiscountAmount = 10000 * 10e18; // Default: 10,000 $EASY
     // Stats
     uint256 public totalUsers;
     uint256 public totalClaims;
@@ -96,7 +98,8 @@ contract EasyBackup is Ownable {
         address _to,
         address _token,
         uint256 _amount,
-        uint256 _expiry
+        uint256 _expiry,
+        bool _isAutomatic
     ) external payable {
         require(isDiscounted(msg.sender) || msg.value >= getInitFee(), "Insufficient fee");
         lastInteraction[msg.sender] = block.timestamp;
@@ -108,6 +111,7 @@ contract EasyBackup is Ownable {
             _amount,
             _expiry,
             true,
+            _isAutomatic,
             false
         );
         createdBackups[msg.sender].push(backupCount);
@@ -134,13 +138,15 @@ contract EasyBackup is Ownable {
     function editBackup(
         uint256 _id,
         uint256 _amount,
-        uint256 _expiry
+        uint256 _expiry,
+        bool _isAutomatic
     ) external {
         require(backups[_id].from == msg.sender, "Not your backup");
         lastInteraction[msg.sender] = block.timestamp;
 
         backups[_id].amount = _amount;
         backups[_id].expiry = _expiry;
+        backups[_id].isAutomatic = _isAutomatic;
 
         emit BackupEdited(
             backups[_id].from,
@@ -182,7 +188,7 @@ contract EasyBackup is Ownable {
         require(
             IERC20(backups[_id].token).transferFrom(
                 backups[_id].from,
-                feeCollector,
+                claimFeeCollector,
                 fee
             ),
             "Transaction failed"
@@ -197,7 +203,55 @@ contract EasyBackup is Ownable {
         );
 
         claims[backups[_id].token] += amount;
-        totalClaims += amount;
+        totalClaims += 1;
+
+        emit BackupClaimed(
+            backups[_id].from,
+            backups[_id].to,
+            backups[_id].token,
+            amount,
+            _id
+        );
+    }
+
+    // Automatic claiming
+    function claimBackupAuto(uint256 _id) external {
+        require(backups[_id].isAutomatic, "Not automatic");
+        require(
+            backups[_id].expiry + lastInteraction[backups[_id].from] <
+                block.timestamp,
+            "Too early"
+        );
+        require(backups[_id].isActive, "Backup inactive");
+
+        lastInteraction[msg.sender] = block.timestamp;
+
+        // Calculate amount, minimum of balance, allowance, backup amount
+        uint256 amount = getClaimableAmount(_id);
+        uint256 fee = (amount * claimFee) / 10000;
+
+        backups[_id].isActive = false;
+        backups[_id].isClaimed = true;
+
+        require(
+            IERC20(backups[_id].token).transferFrom(
+                backups[_id].from,
+                claimFeeCollector,
+                fee
+            ),
+            "Transaction failed"
+        );
+        require(
+            IERC20(backups[_id].token).transferFrom(
+                backups[_id].from,
+                backups[_id].to,
+                amount - fee
+            ),
+            "Transaction failed"
+        );
+
+        claims[backups[_id].token] += amount;
+        totalClaims += 1;
 
         emit BackupClaimed(
             backups[_id].from,
@@ -261,8 +315,12 @@ contract EasyBackup is Ownable {
         ethPriceOracle = EthPriceOracle(_newOracle);
     }
 
-    function setFeeCollector(address _feeCollector) external onlyOwner {
-        feeCollector = _feeCollector;
+    function setInitFeeCollector(address _feeCollector) external onlyOwner {
+        initFeeCollector = _feeCollector;
+    }
+
+    function setClaimFeeCollector(address _feeCollector) external onlyOwner {
+        claimFeeCollector = _feeCollector;
     }
 
     function setInitFee(uint256 _fee) external onlyOwner {
@@ -278,6 +336,6 @@ contract EasyBackup is Ownable {
     }
 
     function withdrawAll() public payable onlyOwner {
-        require(payable(feeCollector).send(address(this).balance));
+        require(payable(initFeeCollector).send(address(this).balance));
     }
 }
