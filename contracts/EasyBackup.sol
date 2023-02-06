@@ -87,7 +87,8 @@ contract EasyBackup is Ownable {
         address indexed to,
         address indexed token,
         uint256 amount,
-        uint256 id
+        uint256 id,
+        bool isAutomatic
     );
 
     // USER FUNCTIONS
@@ -219,7 +220,8 @@ contract EasyBackup is Ownable {
             backups[_id].to,
             backups[_id].token,
             amount,
-            _id
+            _id,
+            false
         );
     }
 
@@ -267,7 +269,8 @@ contract EasyBackup is Ownable {
             backups[_id].to,
             backups[_id].token,
             amount,
-            _id
+            _id,
+            true
         );
     }
 
