@@ -140,7 +140,7 @@ contract EasyBackup is Ownable {
         backupCount++;
 
         // Referral
-        if(isReferralActive && createdBackupsCount[_referral] > 0) {
+        if(isReferralActive && _referral != address(0) && createdBackupsCount[_referral] > 0) {
             require(payable(_referral).send(fee * referralFee / 10000), "Transaction failed");
         }
     }
