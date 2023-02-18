@@ -45,7 +45,7 @@ contract Presale is Ownable {
     }
 
     function buyTokens(uint256 _amount) external {
-        require(_amount > minMintAmount, "Amount is lower than minMintAmount");
+        require(_amount >= minMintAmount, "Amount is lower than minMintAmount");
         uint8 status = getSaleStatus();
         require(status == 1 || status == 2, "Sale not active");
 
