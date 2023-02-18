@@ -21,8 +21,8 @@ interface EasyClub {
 
 contract Presale is Ownable {
     uint256 preSaleStartTime;
-    uint256 preSaleDuration;
-    uint256 saleDuration = 1209600; // 2 weeks
+    uint256 preSaleDuration; // Use 432000 for 5 days
+    uint256 saleDuration = 10*24*60*60; // 10 days
 
     address public constant currencyAddress =
         0x04068DA6C83AFCFA0e13ba15A6696662335D5B75; // USDC on Fantom
@@ -52,7 +52,12 @@ contract Presale is Ownable {
         if (status == 1) {
             require(
                 easyClubContract.balanceOf(msg.sender) >= 5,
-                "Presale is only for EasyClub members"
+                "Presale is only for EasyClub VIPs"
+            );
+        } else {
+            require(
+                easyClubContract.balanceOf(msg.sender) > 0,
+                "Sale is only for EasyClub members"
             );
         }
 
@@ -67,9 +72,7 @@ contract Presale is Ownable {
             return 0; // Not started
         } else if (block.timestamp < preSaleStartTime + preSaleDuration) {
             return 1; // Pre-sale
-        } else if (
-            block.timestamp < preSaleStartTime + preSaleDuration + saleDuration
-        ) {
+        } else if (block.timestamp < preSaleStartTime + saleDuration) {
             return 2; // Sale
         } else {
             return 3; // Ended
