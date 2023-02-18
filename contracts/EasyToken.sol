@@ -22,11 +22,9 @@ contract EasyToken is ERC20, Ownable {
     uint256 public unlockTimestmap;
     // Farm Allocation
     address public farmAddress;
-    bool farmAddressSet = false;
     uint256 public mintedFarmTokens = 0;
     // Presale Allocation
     address public presaleAddress;
-    bool presaleSet = false;
     uint256 public mintedPresaleTokens = 0;
 
     constructor() ERC20("EasyBlock", "EASY") {
@@ -50,9 +48,7 @@ contract EasyToken is ERC20, Ownable {
 
     // Farm Allocation
     function setFarmAddress(address _address) external onlyOwner {
-        require(!farmAddressSet, "Farm address already set");
         farmAddress = _address;
-        farmAddressSet = true;
     }
 
     function farmMint(address _to, uint256 _amount) external {
@@ -67,9 +63,7 @@ contract EasyToken is ERC20, Ownable {
 
     // Presale Allocation
     function setPresaleAddress(address _address) external onlyOwner {
-        require(!presaleSet, "Presale address already set");
         presaleAddress = _address;
-        presaleSet = true;
     }
 
     function presaleMint(uint256 _amount, address _buyer) external {
