@@ -20,9 +20,9 @@ interface EasyClub {
 }
 
 contract Presale is Ownable {
-    uint256 preSaleStartTime;
-    uint256 preSaleDuration; // Use 432000 for 5 days
-    uint256 saleDuration = 10*24*60*60; // 10 days
+    uint256 public preSaleStartTime;
+    uint256 public preSaleDuration; // Use 432000 for 5 days
+    uint256 public saleDuration = 10*24*60*60; // 10 days
 
     address public constant currencyAddress =
         0x04068DA6C83AFCFA0e13ba15A6696662335D5B75; // USDC on Fantom
