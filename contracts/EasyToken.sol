@@ -7,17 +7,13 @@ import "./libs/Ownable.sol";
 contract EasyToken is ERC20, Ownable {
     // Token Allocations
     uint256 public constant MAX_POSSIBLE_SUPPLY = 10000000 * 1e18; // 10 million
-    uint256 public constant INITIAL_DEVELOPER_ALLOCATION =
-        MAX_POSSIBLE_SUPPLY / 10; // 1 million
-    uint256 public constant LOCKED_DEVELOPER_ALLOCATION =
-        MAX_POSSIBLE_SUPPLY / 10; // 1 million
-    uint256 public constant FARM_ALLOCATION = (MAX_POSSIBLE_SUPPLY * 4) / 10; // 4 million
-    uint256 public constant PRESALE_ALLOCATION =
-        (MAX_POSSIBLE_SUPPLY * 35) / 100; // 3.5 million
-    uint256 public constant LIQUIDITY_ALLOCATION =
-        (MAX_POSSIBLE_SUPPLY * 5) / 100; // 0.5 million
+    uint256 public constant INITIAL_DEVELOPER_ALLOCATION = MAX_POSSIBLE_SUPPLY / 10; // 1 million
+    uint256 public constant LOCKED_DEVELOPER_ALLOCATION = MAX_POSSIBLE_SUPPLY / 10; // 1 million (vested over 1 year)
+    uint256 public constant FARM_ALLOCATION = MAX_POSSIBLE_SUPPLY * 4 / 10; // 4 million (distributed over 1 year)
+    uint256 public constant PRESALE_ALLOCATION = MAX_POSSIBLE_SUPPLY * 35 / 100; // 3.5 million
+    uint256 public constant LIQUIDITY_ALLOCATION = MAX_POSSIBLE_SUPPLY * 5 / 100; // 0.5 million
 
-    // Locked Developer Funds
+    // Locked Developer Allocation
     uint256 public lastMintTimestamp;
     uint256 public unlockTimestmap;
     // Farm Allocation
@@ -37,12 +33,10 @@ contract EasyToken is ERC20, Ownable {
 
     // Locked Developer Funds
     function mintVestedTokens() external onlyOwner {
-        uint256 currentTimestamp = block.timestamp > unlockTimestmap
-            ? unlockTimestmap
-            : block.timestamp;
-        uint256 amount = (LOCKED_DEVELOPER_ALLOCATION *
-            (currentTimestamp - lastMintTimestamp)) / 365 days;
-        lastMintTimestamp = block.timestamp;
+        uint256 currentTimestamp = block.timestamp > unlockTimestmap ? unlockTimestmap : block.timestamp;
+        uint256 passedTimeSinceLastMint = currentTimestamp - lastMintTimestamp;
+        uint256 amount = LOCKED_DEVELOPER_ALLOCATION * passedTimeSinceLastMint / 365 days;
+        lastMintTimestamp = currentTimestamp;
         _mint(msg.sender, amount);
     }
 
@@ -72,8 +66,8 @@ contract EasyToken is ERC20, Ownable {
             mintedPresaleTokens + _amount <= PRESALE_ALLOCATION,
             "Presale allocation exceeded"
         );
-        _mint(_buyer, _amount);
-        _mint(owner(), _amount / 7);
         mintedPresaleTokens += _amount;
+        _mint(_buyer, _amount);
+        _mint(owner(), _amount / 7); // Liquidity Allocation
     }
 }
