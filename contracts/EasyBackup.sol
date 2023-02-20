@@ -61,6 +61,7 @@ contract EasyBackup is Ownable {
     uint256 public totalUsers;
     uint256 public totalClaims;
     mapping(address => uint256) public claims;
+    uint256 public referralBackupCount;
 
     // EVENTS
     event BackupCreated(
@@ -142,6 +143,7 @@ contract EasyBackup is Ownable {
         // Referral
         if(isReferralActive && _referral != address(0) && createdBackupsCount[_referral] > 0) {
             require(payable(_referral).send(fee * referralFee / 10000), "Transaction failed");
+            referralBackupCount += 1;
         }
     }
 
