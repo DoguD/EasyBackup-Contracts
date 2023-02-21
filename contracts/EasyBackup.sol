@@ -54,6 +54,7 @@ contract EasyBackup is Ownable {
     mapping(address => uint256) public createdBackupsCount;
     mapping(address => uint256[]) public claimableBackups;
     mapping(address => uint256) public claimableBackupsCount;
+    mapping(address => bool) public freeUser;
     // Discount for $EASY balance
     address public easyTokenAddress;
     uint256 public easyTokenDiscountAmount = 10000 * 10e18; // Default: 10,000 $EASY
@@ -295,7 +296,7 @@ contract EasyBackup is Ownable {
     }
 
     function isDiscounted(address _user) public view returns (bool) {
-        return IERC20(easyTokenAddress).balanceOf(_user) >= easyTokenDiscountAmount;
+        return freeUser[_user] || IERC20(easyTokenAddress).balanceOf(_user) >= easyTokenDiscountAmount;
     }
 
     function min(
@@ -355,6 +356,10 @@ contract EasyBackup is Ownable {
 
     function setReferralFee(uint256 _fee) external onlyOwner {
         referralFee = _fee;
+    }
+
+    function setFreeUser(address _user, bool _isFree) external onlyOwner {
+        freeUser[_user] = _isFree;
     }
 
     function withdrawAll() public payable onlyOwner {
