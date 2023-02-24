@@ -21,11 +21,10 @@ interface EasyClub {
 
 contract Presale is Ownable {
     uint256 public preSaleStartTime;
-    uint256 public preSaleDuration; // Use 432000 for 5 days
+    uint256 public preSaleDuration = 5*24*60*60; // 5 days
     uint256 public saleDuration = 10*24*60*60; // 10 days
 
-    address public constant currencyAddress =
-        0x04068DA6C83AFCFA0e13ba15A6696662335D5B75; // USDC on Fantom
+    address public constant currencyAddress = 0x04068DA6C83AFCFA0e13ba15A6696662335D5B75; // USDC on Fantom
     address public tokenAddress;
     uint256 public constant tokenPrice = 5000; // 0.005 USDC (USDC has 6 decimals)
 
@@ -36,11 +35,9 @@ contract Presale is Ownable {
 
     constructor(
         uint256 _startTime,
-        uint256 _preSaleDuration,
         address _tokenAddress
     ) {
         preSaleStartTime = _startTime;
-        preSaleDuration = _preSaleDuration;
         tokenAddress = _tokenAddress;
     }
 
