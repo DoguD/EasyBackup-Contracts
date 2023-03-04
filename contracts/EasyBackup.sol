@@ -7,6 +7,10 @@ interface EthPriceOracle {
     function getEthPrice() external view returns (uint256, uint256);
 }
 
+interface DiscountedUserOracle {
+    function isDiscountedUser(address _user) external view returns (bool);
+}
+
 interface IERC20 {
     function balanceOf(address _owner) external view returns (uint256 balance);
 
@@ -40,12 +44,15 @@ contract EasyBackup is Ownable {
     // Manager Variables
     uint256 public claimFee = 100; // Basis points, default 1%
     uint256 public initFeeUsd = 1000; // In 0.01 USD, default $10
-    address public ethPriceOracleAddress;
-    EthPriceOracle ethPriceOracle;
     address public initFeeCollector;
     address public claimFeeCollector;
     bool public isReferralActive;
     uint public referralFee = 5000; // Basis points, default 50%
+    // Oracle
+    address public ethPriceOracleAddress;
+    EthPriceOracle ethPriceOracle;
+    address public discountedUserOracleAddress;
+    DiscountedUserOracle discountedUserOracle;
     // User Variables
     mapping(address => uint256) public lastInteraction;
     mapping(uint256 => Backup) public backups;
@@ -54,10 +61,6 @@ contract EasyBackup is Ownable {
     mapping(address => uint256) public createdBackupsCount;
     mapping(address => uint256[]) public claimableBackups;
     mapping(address => uint256) public claimableBackupsCount;
-    mapping(address => bool) public freeUser;
-    // Discount for $EASY balance
-    address public easyTokenAddress;
-    uint256 public easyTokenDiscountAmount = 10000 * 10e18; // Default: 10,000 $EASY
     // Stats
     uint256 public totalUsers;
     uint256 public totalClaims;
@@ -108,7 +111,7 @@ contract EasyBackup is Ownable {
         address _referral
     ) external payable {
         uint256 fee = getInitFee();
-        require(isDiscounted(msg.sender) || msg.value >= fee, "Insufficient fee");
+        require(discountedUserOracle.isDiscountedUser(msg.sender) || msg.value >= fee, "Insufficient fee");
         lastInteraction[msg.sender] = block.timestamp;
 
         backups[backupCount] = Backup(
@@ -295,10 +298,6 @@ contract EasyBackup is Ownable {
         );
     }
 
-    function isDiscounted(address _user) public view returns (bool) {
-        return freeUser[_user] || IERC20(easyTokenAddress).balanceOf(_user) >= easyTokenDiscountAmount;
-    }
-
     function min(
         uint256 a,
         uint256 b,
@@ -330,6 +329,11 @@ contract EasyBackup is Ownable {
         ethPriceOracle = EthPriceOracle(_newOracle);
     }
 
+    function setDiscountedUserOracle(address _newOracle) external onlyOwner {
+        discountedUserOracleAddress = _newOracle;
+        discountedUserOracle = DiscountedUserOracle(_newOracle);
+    }
+
     function setInitFeeCollector(address _feeCollector) external onlyOwner {
         initFeeCollector = _feeCollector;
     }
@@ -342,24 +346,12 @@ contract EasyBackup is Ownable {
         initFeeUsd = _fee;
     }
 
-    function setEasyContract(address _address) external onlyOwner {
-        easyTokenAddress = _address;
-    }
-
-    function setDiscountAmount(uint256 _amount) external onlyOwner {
-        easyTokenDiscountAmount = _amount;
-    }
-
     function setIsReferralActive(bool _isActive) external onlyOwner {
         isReferralActive = _isActive;
     }
 
     function setReferralFee(uint256 _fee) external onlyOwner {
         referralFee = _fee;
-    }
-
-    function setFreeUser(address _user, bool _isFree) external onlyOwner {
-        freeUser[_user] = _isFree;
     }
 
     function withdrawAll() public payable onlyOwner {
