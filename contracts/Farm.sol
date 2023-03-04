@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: BUSL-1.1
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import "./libs/Address.sol";
@@ -410,10 +410,8 @@ contract MasterChef is Ownable {
 
     EasyToken public easy;
 
-    // Dev address.
-    address public devaddr;
     // Easy tokens created per block.
-    uint256 public easyPerSecond;
+    uint256 public easyPerSecond; // 4 million over 365 days = 0.12683916793
 
     // set a max Easy per second, which can never be higher than 0.13 per second
     uint256 public constant maxEasyPerSecond = 13 * 1e16;
@@ -436,12 +434,10 @@ contract MasterChef is Ownable {
 
     constructor(
         address _easyAddress,
-        address _devaddr,
         uint256 _easyPerSecond,
         uint256 _startTime
     ) {
         easy = EasyToken(_easyAddress);
-        devaddr = _devaddr;
         easyPerSecond = _easyPerSecond;
         startTime = _startTime;
     }
@@ -453,7 +449,7 @@ contract MasterChef is Ownable {
     // Changes easy token reward per second, with a cap of maxeasy per second
     // Good practice to update pools without messing up the contract
     function setEasyPerSecond(uint256 _easyPerSecond) external onlyOwner {
-        require(_easyPerSecond <= maxEasyPerSecond, "setEasyPerSecond: too many easys!");
+        require(_easyPerSecond <= maxEasyPerSecond, "setEasyPerSecond: too many eEsys!");
 
         // This MUST be done or pool rewards will be calculated with new easy per second
         // This could unfairly punish small pools that dont have frequent deposits/withdraws/harvests
@@ -631,11 +627,5 @@ contract MasterChef is Ownable {
         } else {
             easy.transfer(_to, _amount);
         }
-    }
-
-    // Update dev address by the previous dev.
-    function dev(address _devaddr) public {
-        require(msg.sender == devaddr, "dev: wut?");
-        devaddr = _devaddr;
     }
 }
