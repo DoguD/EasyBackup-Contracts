@@ -48,7 +48,7 @@ contract EasyBackup is Ownable {
     address public claimFeeCollector;
     bool public isReferralActive;
     uint public referralFee = 5000; // Basis points, default 50%
-    // Oracle
+    // Oracles
     address public ethPriceOracleAddress;
     EthPriceOracle ethPriceOracle;
     address public discountedUserOracleAddress;
@@ -110,9 +110,10 @@ contract EasyBackup is Ownable {
         bool _isAutomatic,
         address _referral
     ) external payable {
+        heartBeat();
+
         uint256 fee = getInitFee();
         require(discountedUserOracle.isDiscountedUser(msg.sender) || msg.value >= fee, "Insufficient fee");
-        lastInteraction[msg.sender] = block.timestamp;
 
         backups[backupCount] = Backup(
             msg.sender,
@@ -153,20 +154,23 @@ contract EasyBackup is Ownable {
 
     function editBackup(
         uint256 _id,
+        address _to,
         uint256 _amount,
         uint256 _expiry,
         bool _isAutomatic
     ) external {
-        require(backups[_id].from == msg.sender, "Not your backup");
-        lastInteraction[msg.sender] = block.timestamp;
+        heartBeat();
 
+        require(backups[_id].from == msg.sender, "Not your backup");
+        
+        backups[_id].to = _to;
         backups[_id].amount = _amount;
         backups[_id].expiry = _expiry;
         backups[_id].isAutomatic = _isAutomatic;
 
         emit BackupEdited(
-            backups[_id].from,
             msg.sender,
+            _to,
             backups[_id].token,
             _amount,
             _expiry,
@@ -175,8 +179,9 @@ contract EasyBackup is Ownable {
     }
 
     function deleteBackup(uint256 _id) external {
+        heartBeat();
+
         require(backups[_id].from == msg.sender, "Not your backup");
-        lastInteraction[msg.sender] = block.timestamp;
 
         backups[_id].isActive = false;
         emit BackupDeleted(_id);
@@ -184,6 +189,8 @@ contract EasyBackup is Ownable {
 
     // Backup claiming
     function claimBackup(uint256 _id) external {
+        heartBeat();
+
         require(backups[_id].to == msg.sender, "Not your backup");
         require(
             backups[_id].expiry + lastInteraction[backups[_id].from] <
@@ -191,8 +198,6 @@ contract EasyBackup is Ownable {
             "Too early"
         );
         require(backups[_id].isActive, "Backup inactive");
-
-        lastInteraction[msg.sender] = block.timestamp;
 
         // Calculate amount, minimum of balance, allowance, backup amount
         uint256 amount = getClaimableAmount(_id);
@@ -233,6 +238,8 @@ contract EasyBackup is Ownable {
 
     // Automatic claiming
     function claimBackupAuto(uint256 _id) external {
+        heartBeat();
+        
         require(backups[_id].isAutomatic, "Not automatic");
         require(
             backups[_id].expiry + lastInteraction[backups[_id].from] <
@@ -240,8 +247,6 @@ contract EasyBackup is Ownable {
             "Too early"
         );
         require(backups[_id].isActive, "Backup inactive");
-
-        lastInteraction[msg.sender] = block.timestamp;
 
         // Calculate amount, minimum of balance, allowance, backup amount
         uint256 amount = getClaimableAmount(_id);
@@ -288,17 +293,16 @@ contract EasyBackup is Ownable {
     }
 
     function getClaimableAmount(uint256 _id) public view returns (uint256) {
-        return min(
-            IERC20(backups[_id].token).balanceOf(backups[_id].from),
-            IERC20(backups[_id].token).allowance(
-                backups[_id].from,
-                address(this)
-            ),
+        address tokenAddress = backups[_id].token;
+        address backupFrom = backups[_id].from;
+        return minOfThree(
+            IERC20(tokenAddress).balanceOf(backupFrom),
+            IERC20(tokenAddress).allowance(backupFrom,address(this)),
             backups[_id].amount
         );
     }
 
-    function min(
+    function minOfThree(
         uint256 a,
         uint256 b,
         uint256 c
