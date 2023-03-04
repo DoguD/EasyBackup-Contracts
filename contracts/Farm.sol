@@ -543,7 +543,6 @@ contract MasterChef is Ownable {
         uint256 multiplier = getMultiplier(pool.lastRewardTime, block.timestamp);
         uint256 easyReward = multiplier.mul(easyPerSecond).mul(pool.allocPoint).div(totalAllocPoint);
 
-        // TODO: understand why? easy.farmMint(devaddr, easyReward.div(10));
         easy.farmMint(address(this), easyReward);
 
         pool.accEASYPerShare = pool.accEASYPerShare.add(easyReward.mul(1e12).div(lpSupply));

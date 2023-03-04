@@ -6,12 +6,12 @@ import "./libs/Address.sol";
 import "./libs/ERC20/IERC20.sol";
 import "./libs/ERC20/ERC20.sol";
 
-// xEasy is the staked version of Easy Token which earns 90% of platform revenue
+// xEasy is the staked version of Easy Token which earns 90% of EasyBackup initial fees
 contract xEasyBlock is ERC20("xEasyBlock", "xEASY") {
     address public easyAddresss;
 
     // Define the Easy token contract
-    constructor(address _easyAddresss) public {
+    constructor(address _easyAddresss) {
         easyAddresss = _easyAddresss;
     }
 
@@ -30,31 +30,44 @@ contract xEasyBlock is ERC20("xEasyBlock", "xEASY") {
             uint256 mintAmount = _amount * totalShares / totalEasy;
             mint(msg.sender, mintAmount);
         }
-        // Lock the Boo in the contract
+        // Lock the Easy in the contract
         require(IERC20(easyAddresss).transferFrom(msg.sender, address(this), _amount), "Easy transfer failed");
     }
 
     // Unlocks the staked + gained Easy and burns xEasy
     function leave(uint256 _share) public {
-        // Gets the amount of xEasy in existence
+        // Gets the amount Easy locked and of xEasy in existence
+        uint256 totalEasy = IERC20(easyAddresss).balanceOf(address(this));
         uint256 totalShares = totalSupply();
         // Calculates the amount of Easy the xEasy is worth
-        uint256 easyAmount = _share * IERC20(easyAddresss).balanceOf(address(this)) / totalShares;
+        uint256 easyAmount = _share * totalEasy / totalShares;
         burn(msg.sender, _share);
         IERC20(easyAddresss).transfer(msg.sender, easyAmount);
     }
 
     // returns the total amount of Easy an address has in the contract including fees earned
     function EASYBalance(address _account) external view returns (uint256 easyAmount_) {
+        uint256 totalEasy = IERC20(easyAddresss).balanceOf(address(this));
         uint256 xEasyAmount = balanceOf(_account);
         uint256 totalxEasy = totalSupply();
-        easyAmount_ = xEasyAmount * IERC20(easyAddresss).balanceOf(address(this)) / totalxEasy;
+        if (totalxEasy == 0 || totalEasy == 0) {
+            easyAmount_ = 0;
+        }
+        else {
+            easyAmount_ = xEasyAmount * totalEasy / totalxEasy;
+        }
     }
 
     // returns how much Easy someone gets for redeeming xEasy
     function xEasyForEasy(uint256 _xEasyAmount) external view returns (uint256 easyAmount_) {
+        uint256 totalEasy = IERC20(easyAddresss).balanceOf(address(this));
         uint256 totalxEasy = totalSupply();
-        easyAmount_ = _xEasyAmount * IERC20(easyAddresss).balanceOf(address(this)) / totalxEasy;
+        if (totalxEasy == 0 || totalEasy == 0) {
+            easyAmount_ = _xEasyAmount;
+        }
+        else {
+            easyAmount_ = _xEasyAmount * totalEasy / totalxEasy;
+        }
     }
 
     // returns how much xEasy someone gets for depositing Easy
@@ -104,7 +117,7 @@ contract xEasyBlock is ERC20("xEasyBlock", "xEASY") {
     // A record of states for signing / validating signatures
     mapping (address => uint) public nonces;
 
-      /// @notice An event thats emitted when an account changes its delegate
+    /// @notice An event thats emitted when an account changes its delegate
     event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
 
     /// @notice An event thats emitted when a delegate account's vote balance changes
