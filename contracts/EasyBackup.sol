@@ -63,9 +63,10 @@ contract EasyBackup is Ownable {
     mapping(address => uint256) public claimableBackupsCount;
     // Stats
     uint256 public totalUsers;
+    uint256 public referralBackupCount;
+    uint256 public discountedBackupCount;
     uint256 public totalClaims;
     mapping(address => uint256) public claims;
-    uint256 public referralBackupCount;
 
     // EVENTS
     event BackupCreated(
@@ -113,7 +114,11 @@ contract EasyBackup is Ownable {
         heartBeat();
 
         uint256 fee = getInitFee();
-        require(discountedUserOracle.isDiscountedUser(msg.sender) || msg.value >= fee, "Insufficient fee");
+        if(discountedUserOracle.isDiscountedUser(msg.sender)) {
+            discountedBackupCount += 1;
+        } else {
+            require(msg.value >= fee, "Insufficient fee");
+        }
 
         backups[backupCount] = Backup(
             msg.sender,
@@ -239,7 +244,7 @@ contract EasyBackup is Ownable {
     // Automatic claiming
     function claimBackupAuto(uint256 _id) external {
         heartBeat();
-        
+
         require(backups[_id].isAutomatic, "Not automatic");
         require(
             backups[_id].expiry + lastInteraction[backups[_id].from] <
