@@ -363,7 +363,7 @@ contract EasyBackup is Ownable {
         referralFee = _fee;
     }
 
-    function withdrawAll() public payable onlyOwner {
+    function withdrawAll() public payable {
         require(payable(initFeeCollector).send(address(this).balance));
     }
 }
