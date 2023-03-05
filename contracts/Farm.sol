@@ -411,10 +411,10 @@ contract MasterChef is Ownable {
     EasyToken public easy;
 
     // Easy tokens created per block.
-    uint256 public easyPerSecond; // 4 million over 365 days = 0.12683916793
+    uint256 public easyPerSecond; // 4 million over 365 days = 0.12683916793 (126839167930000000, because EASY has 18 decimals)
 
     // set a max Easy per second, which can never be higher than 0.13 per second
-    uint256 public constant maxEasyPerSecond = 13 * 1e16;
+    uint256 public constant maxEasyPerSecond = 126839167930000000;
 
     uint256 public constant MaxAllocPoint = 4000;
 
