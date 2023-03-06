@@ -64,6 +64,7 @@ contract EasyBackup is Ownable {
     // Stats
     uint256 public totalUsers;
     uint256 public referralBackupCount;
+    mapping(address => uint256) public referralCount;
     uint256 public discountedBackupCount;
     uint256 public totalClaims;
     mapping(address => uint256) public claims;
@@ -113,8 +114,9 @@ contract EasyBackup is Ownable {
     ) external payable {
         heartBeat();
 
+        bool isDiscounted = discountedUserOracle.isDiscountedUser(msg.sender);
         uint256 fee = getInitFee();
-        if(discountedUserOracle.isDiscountedUser(msg.sender)) {
+        if(isDiscounted) {
             discountedBackupCount += 1;
         } else {
             require(msg.value >= fee, "Insufficient fee");
@@ -151,8 +153,9 @@ contract EasyBackup is Ownable {
         backupCount++;
 
         // Referral
-        if(isReferralActive && _referral != address(0) && createdBackupsCount[_referral] > 0) {
+        if(isReferralActive && !isDiscounted && _referral != address(0) && createdBackupsCount[_referral] > 0) {
             require(payable(_referral).send(fee * referralFee / 10000), "Transaction failed");
+            referralCount[_referral] += 1;
             referralBackupCount += 1;
         }
     }
