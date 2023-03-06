@@ -47,7 +47,7 @@ contract EasyBackup is Ownable {
     address public initFeeCollector;
     address public claimFeeCollector;
     bool public isReferralActive;
-    uint public referralFee = 5000; // Basis points, default 50%
+    uint256 public referralFee = 5000; // Basis points, default 50%
     // Oracles
     address public ethPriceOracleAddress;
     EthPriceOracle ethPriceOracle;
