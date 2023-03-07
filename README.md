@@ -1,13 +1,11 @@
-# Sample Hardhat Project
+# EasyBackup Contracts
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
+(Deployed to **Fantom Network**)
 
-Try running some of the following tasks:
+EASY Token: https://ftmscan.com/address/0x26A0D46A4dF26E9D7dEeE9107a27ee979935F237
 
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.js
-```
+xEASY Token (EASY Staking): https://ftmscan.com/address/0x5Cd9C4bcFDa86dd4C13AF8B04B30B4D8651F2D7C
+
+EasyBackup:  https://ftmscan.com/address/0x164E51048dE21EcF9E4C42399145c7fE7DA2Fb19
+
+EASY-USDC Farm:  https://ftmscan.com/address/0x1C5b167991719Ee2A48C38408294f471222d7bD4
